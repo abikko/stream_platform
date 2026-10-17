@@ -16,11 +16,11 @@ func main() {
 
 	mux.HandleFunc("/health", httpapi.NewHealthHandler().ServeHTTP)
 
-	mux.HandleFunc("/register", httpapi.NewRegisterHandler(pool).ServeHTTP)
+	mux.HandleFunc("/register", httpapi.NewRegisterHandler(httpapi.RegisterService{Store: &httpapi.UserStore{Pool: pool}}).ServeHTTP)
 
 	log.Println("Сервер запущен: http://localhost:8080")
 
 	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("listen and serve: %v", err)
+		log.Fatalf("listen and: %v", err)
 	}
 }
