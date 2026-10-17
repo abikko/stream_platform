@@ -1,8 +1,9 @@
 package postgres
 
 import (
-	"stream_platform/auth/internal/identity"
 	"time"
+
+	"github.com/abikko/stream_platform/auth/internal/identity"
 )
 
 type UserRow struct {

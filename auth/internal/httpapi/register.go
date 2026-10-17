@@ -2,9 +2,11 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
-	"stream_platform/auth/internal/identity"
+
+	"github.com/abikko/stream_platform/auth/internal/identity"
 )
 
 type RegisterResponse struct {
@@ -20,7 +22,7 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 }
 
-func NewRegisterHandler(service identity.RegisterService) *RegisterHandler {
+func NewRegisterHandler(service identity.RegisterService) (h *RegisterHandler) {
 	return &RegisterHandler{service: service}
 }
 
@@ -30,7 +32,7 @@ func (h *RegisterHandler) ServeHTTP(
 ) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Method not allowed"))
+		return
 	}
 
 	var req RegisterRequest
@@ -43,25 +45,24 @@ func (h *RegisterHandler) ServeHTTP(
 	}
 
 	id, err := h.service.InsertUser(r.Context(), req.Email, req.Password)
-
 	if err != nil {
-		switch err {
-		case identity.ErrEmailAlreadyInUse:
+		switch {
+		case errors.Is(err, identity.ErrEmailAlreadyInUse):
 			{
 				http.Error(w, "email already in use", http.StatusConflict)
 				return
 			}
-		case identity.ErrPasswordTooLong:
+		case errors.Is(err, identity.ErrPasswordTooLong):
 			{
 				http.Error(w, "password too long", http.StatusBadRequest)
 				return
 			}
-		case identity.ErrEmailIsEmpty:
+		case errors.Is(err, identity.ErrEmailIsEmpty):
 			{
 				http.Error(w, "email is empty", http.StatusBadRequest)
 				return
 			}
-		case identity.ErrPasswordIsEmpty:
+		case errors.Is(err, identity.ErrPasswordIsEmpty):
 			{
 				http.Error(w, "password is empty", http.StatusBadRequest)
 				return

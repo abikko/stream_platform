@@ -3,11 +3,15 @@ package identity
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-var ErrInvalidCredentials = errors.New("invalid credentials")
+var (
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserDoesNotExist   = errors.New("user does not exist")
+)
 
 type LoginService struct {
 	Store BaseStore
@@ -28,7 +32,10 @@ func (service LoginService) LoginUser(ctx context.Context, email string, passwor
 	cryptError := bcrypt.CompareHashAndPassword([]byte(userDto.PasswordHash), []byte(password))
 
 	if err != nil {
-		return err
+		if errors.Is(err, ErrUserDoesNotExist) {
+			return ErrInvalidCredentials
+		}
+		return fmt.Errorf("find user: %w", err)
 	}
 
 	if cryptError != nil {
@@ -36,5 +43,4 @@ func (service LoginService) LoginUser(ctx context.Context, email string, passwor
 	}
 
 	return nil
-
 }

@@ -5,7 +5,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"stream_platform/auth/internal/identity"
+
+	"github.com/abikko/stream_platform/auth/internal/identity"
 )
 
 type LoginRequest struct {
@@ -22,7 +23,8 @@ func NewLoginHandler(service identity.LoginService) *LoginHandler {
 }
 
 func (h *LoginHandler) ServeHTTP(w http.ResponseWriter,
-	r *http.Request) {
+	r *http.Request,
+) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -37,7 +39,6 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter,
 	}
 
 	err := h.service.LoginUser(r.Context(), req.Email, req.Password)
-
 	if err != nil {
 		switch {
 		case errors.Is(err, identity.ErrInvalidCredentials):
@@ -55,6 +56,7 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter,
 		default:
 			{
 				log.Printf("login: %v", err)
+				http.Error(w, "unable to login", http.StatusInternalServerError)
 			}
 		}
 		return
@@ -62,5 +64,4 @@ func (h *LoginHandler) ServeHTTP(w http.ResponseWriter,
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
 }

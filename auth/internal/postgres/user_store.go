@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"stream_platform/auth/internal/identity"
+	"github.com/abikko/stream_platform/auth/internal/identity"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -16,8 +16,10 @@ type UserStore struct {
 	Pool *pgxpool.Pool
 }
 
-const emailAlreadyInDB = "23505"
-const emailNotFound = "20000"
+const (
+	emailAlreadyInDB = "23505"
+	emailNotFound    = "20000"
+)
 
 func (userStore *UserStore) CreateUser(ctx context.Context, passwordHash []byte, email string) (id string, err error) {
 	query := "INSERT INTO users(email, password_hash) VALUES($1,$2) RETURNING id"
@@ -41,7 +43,7 @@ func (userStore *UserStore) FindUser(ctx context.Context, email string) (identit
 	}
 	p, err := pgx.CollectOneRow(queryRow, pgx.RowToStructByName[UserRow])
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		return identity.User{}, identity.ErrInvalidCredentials
+		return identity.User{}, identity.ErrUserDoesNotExist
 	}
 
 	return p.toUser(), nil

@@ -1,4 +1,4 @@
-module stream_platform
+module github.com/abikko/stream_platform
 
 go 1.27.0
 

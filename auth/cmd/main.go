@@ -3,10 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
-	"stream_platform/auth/internal/httpapi"
-	"stream_platform/auth/internal/identity"
-	"stream_platform/auth/internal/postgres"
+	"github.com/abikko/stream_platform/auth/internal/httpapi"
+	"github.com/abikko/stream_platform/auth/internal/identity"
+	"github.com/abikko/stream_platform/auth/internal/postgres"
 )
 
 func main() {
@@ -23,7 +24,17 @@ func main() {
 
 	log.Println("Сервер запущен: http://localhost:8080")
 
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	timeoutDuration := time.Duration(time.Duration.Seconds(15))
+
+	server := http.Server{
+		Addr:         ":8080",
+		Handler:      mux,
+		ReadTimeout:  timeoutDuration,
+		WriteTimeout: timeoutDuration,
+		IdleTimeout:  -1,
+	}
+
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("listen and: %v", err)
 	}
 }

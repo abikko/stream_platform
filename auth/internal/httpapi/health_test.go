@@ -24,7 +24,7 @@ func TestHealthHandler_MethodNotAllowed(t *testing.T) {
 			recorder := httptest.NewRecorder()
 
 			NewHealthHandler().ServeHTTP(
-				recorder, httptest.NewRequest(test.method, "/health", nil),
+				recorder, httptest.NewRequestWithContext(t.Context(), test.method, "/health", nil),
 			)
 
 			if recorder.Code != test.expectedCode {
