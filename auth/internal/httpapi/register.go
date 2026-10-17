@@ -31,7 +31,7 @@ func (h *RegisterHandler) ServeHTTP(
 	r *http.Request,
 ) {
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 

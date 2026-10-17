@@ -22,19 +22,19 @@ func main() {
 	mux.HandleFunc("/register", httpapi.NewRegisterHandler(identity.RegisterService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
 	mux.HandleFunc("/login", httpapi.NewLoginHandler(identity.LoginService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
 
-	log.Println("Сервер запущен: http://localhost:8080")
-
-	timeoutDuration := time.Duration(time.Duration.Seconds(15))
+	timeoutDuration := 15 * time.Second
 
 	server := http.Server{
-		Addr:         ":8080",
-		Handler:      mux,
-		ReadTimeout:  timeoutDuration,
-		WriteTimeout: timeoutDuration,
-		IdleTimeout:  -1,
+		Addr:              ":8080",
+		Handler:           mux,
+		ReadHeaderTimeout: 8 * time.Second,
+		ReadTimeout:       timeoutDuration,
+		WriteTimeout:      timeoutDuration,
+		IdleTimeout:       time.Minute,
 	}
 
 	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("listen and: %v", err)
+		log.Fatalf("listen and serve: %v", err)
 	}
+	log.Println("Сервер запущен: http://localhost:8080")
 }
