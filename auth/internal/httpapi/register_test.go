@@ -69,7 +69,17 @@ func Test_RegisterEmail(t *testing.T) {
 			}).ServeHTTP(recorder, request)
 
 			if recorder.Code != test.statusCode {
-				t.Errorf("%v Want statusCode: %v got: %v", test.name, test.statusCode, recorder.Code)
+				t.Errorf("Want statusCode: %v got: %v", test.statusCode, recorder.Code)
+			}
+
+			var responseJson struct {
+				Id string `json:"id"`
+			}
+
+			json.NewDecoder(recorder.Body).Decode(&responseJson)
+
+			if recorder.Code == http.StatusCreated && recorder.Code == test.statusCode && responseJson.Id != "123" {
+				t.Errorf("expected id 123, got %v", responseJson.Id)
 			}
 		})
 	}
