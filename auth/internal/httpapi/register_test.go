@@ -8,26 +8,32 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"stream_platform/auth/internal/identity"
 )
 
 type MockUserStore struct {
 }
 
+func (store MockUserStore) FindUser(ctx context.Context, email string) (identity.User, error) {
+	return identity.User{}, nil
+}
+
 func (store MockUserStore) CreateUser(ctx context.Context, passwordHash []byte, email string) (string, error) {
 	if email == "test123.kz" {
-		return "", errEmailAlreadyInUse
+		return "", identity.ErrEmailAlreadyInUse
 	}
 
 	if email == "" {
-		return "", errEmailIsEmpty
+		return "", identity.ErrEmailIsEmpty
 	}
 
 	if string(passwordHash) == "" {
-		return "", errPasswordIsEmpty
+		return "", identity.ErrPasswordIsEmpty
 	}
 
 	if len(passwordHash) > 72 {
-		return "", errPasswordTooLong
+		return "", identity.ErrPasswordTooLong
 	}
 
 	return "123", nil
@@ -64,7 +70,7 @@ func Test_RegisterEmail(t *testing.T) {
 				t.Errorf("Error to deserialize: %v", err)
 			}
 			request := httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(testJson))
-			NewRegisterHandler(RegisterService{
+			NewRegisterHandler(identity.RegisterService{
 				Store: MockUserStore{},
 			}).ServeHTTP(recorder, request)
 

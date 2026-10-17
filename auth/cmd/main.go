@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"stream_platform/auth/internal/httpapi"
+	"stream_platform/auth/internal/identity"
+	"stream_platform/auth/internal/postgres"
 )
 
 func main() {
@@ -16,7 +18,8 @@ func main() {
 
 	mux.HandleFunc("/health", httpapi.NewHealthHandler().ServeHTTP)
 
-	mux.HandleFunc("/register", httpapi.NewRegisterHandler(httpapi.RegisterService{Store: &httpapi.UserStore{Pool: pool}}).ServeHTTP)
+	mux.HandleFunc("/register", httpapi.NewRegisterHandler(identity.RegisterService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
+	mux.HandleFunc("/login", httpapi.NewLoginHandler(identity.LoginService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
 
 	log.Println("Сервер запущен: http://localhost:8080")
 

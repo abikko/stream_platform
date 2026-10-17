@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-
-	"github.com/jackc/pgx/v5/pgxpool"
+	"stream_platform/auth/internal/identity"
 )
 
 type RegisterResponse struct {
@@ -13,8 +12,7 @@ type RegisterResponse struct {
 }
 
 type RegisterHandler struct {
-	service RegisterService
-	pool    *pgxpool.Pool
+	service identity.RegisterService
 }
 
 type RegisterRequest struct {
@@ -22,7 +20,7 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 }
 
-func NewRegisterHandler(service RegisterService) *RegisterHandler {
+func NewRegisterHandler(service identity.RegisterService) *RegisterHandler {
 	return &RegisterHandler{service: service}
 }
 
@@ -30,6 +28,11 @@ func (h *RegisterHandler) ServeHTTP(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Method not allowed"))
+	}
+
 	var req RegisterRequest
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
@@ -39,26 +42,26 @@ func (h *RegisterHandler) ServeHTTP(
 		return
 	}
 
-	id, err := h.service.InsertUser(r.Context(), req)
+	id, err := h.service.InsertUser(r.Context(), req.Email, req.Password)
 
 	if err != nil {
 		switch err {
-		case errEmailAlreadyInUse:
+		case identity.ErrEmailAlreadyInUse:
 			{
 				http.Error(w, "email already in use", http.StatusConflict)
 				return
 			}
-		case errPasswordTooLong:
+		case identity.ErrPasswordTooLong:
 			{
 				http.Error(w, "password too long", http.StatusBadRequest)
 				return
 			}
-		case errEmailIsEmpty:
+		case identity.ErrEmailIsEmpty:
 			{
 				http.Error(w, "email is empty", http.StatusBadRequest)
 				return
 			}
-		case errPasswordIsEmpty:
+		case identity.ErrPasswordIsEmpty:
 			{
 				http.Error(w, "password is empty", http.StatusBadRequest)
 				return
