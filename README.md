@@ -8,6 +8,7 @@
 - Go 1.27 или новее.
 - Docker (для PostgreSQL).
 - [goose](https://github.com/pressly/goose) для миграций.
+- [golangci-lint](https://golangci-lint.run) v2: `brew install golangci-lint`.
 
 ## Настройка
 
@@ -75,8 +76,9 @@ curl -i -X POST localhost:8080/login -d '{"email":"user@example.com","password":
 ## Проверка
 
 ```sh
-go test ./...
-go vet ./...
+make check
 ```
+
+Форматирует код, запускает линтеры (`.golangci.yml`) и тесты. Остальные команды: `make help`.
 
 Правила для AI-агента находятся в `AGENTS.md`.

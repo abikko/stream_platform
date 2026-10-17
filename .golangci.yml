@@ -1,0 +1,51 @@
+version: "2"
+
+linters:
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          # не нужен в тестах
+          - gosec
+
+  default: standard
+  settings:
+    revive:
+     enable-default-rules: true
+     rules:
+        # не вижу смысла, проект пока пишет один человек и вряд ли он будет использоваться кем либо в будущем
+       - name: exported
+         disabled: true
+        # не вижу смысла, проект пока пишет один человек и вряд ли он будет использоваться кем либо в будущем
+       - name: package-comments
+         disabled: true
+  enable:
+    - errorlint
+    - gosec
+    - unqueryvet
+    - musttag
+    - recvcheck
+    - usestdlibvars
+    - errchkjson
+    - nilnil
+    - predeclared
+    - unconvert
+    - wastedassign
+    - modernize
+    - errname
+    - nilerr
+    - wrapcheck
+    - sqlclosecheck
+    - rowserrcheck
+    - bodyclose
+    - noctx
+    - revive
+    - gocritic
+    - misspell
+formatters:
+  settings:
+    goimports:
+      local-prefixes: ["github.com/abikko/stream_platform"]
+  enable:
+    - gofumpt
+    - goimports
