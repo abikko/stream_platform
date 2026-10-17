@@ -1,0 +1,205 @@
+openapi: 3.1.0
+
+info:
+  title: Auth service
+  version: 0.1.0
+  description: |
+    Регистрация и вход пользователей stream_platform.
+
+    Тела ошибок — обычный текст (`text/plain`), который пишет `http.Error`:
+    в конце сообщения всегда стоит перевод строки. Клиенту стоит опираться
+    на код ответа, а не на текст.
+
+servers:
+  - url: http://localhost:8080
+    description: Локальный запуск (`make run`)
+
+tags:
+  - name: system
+    description: Служебные эндпоинты
+  - name: auth
+    description: Регистрация и вход
+
+paths:
+  /health:
+    get:
+      tags: [system]
+      operationId: health
+      security: []
+      summary: Проверка, что сервис запущен
+      responses:
+        "200":
+          description: Сервис работает. Тело пустое.
+        "405":
+          description: Метод отличается от GET. Тело пустое.
+
+  /register:
+    post:
+      tags: [auth]
+      operationId: register
+      security: []
+      summary: Регистрация пользователя
+      description: |
+        Создаёт пользователя с указанным email и паролем. Пароль хранится
+        в виде bcrypt-хеша.
+
+        Сейчас запрос с неизвестными полями отклоняется с `400`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              email: user@example.com
+              password: secret123
+      responses:
+        "201":
+          description: Пользователь создан.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+              example:
+                id: 3f2b8c1e-6a4d-4e9b-9c1a-2d7e5f0a8b44
+        "400":
+          description: |
+            Некорректный запрос: тело не JSON или содержит неизвестные поля,
+            email или пароль пустые, пароль длиннее 72 байт.
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/ErrorText"
+              examples:
+                parse:
+                  summary: Тело не разобрано
+                  value: "Unable to parse\n"
+                emailEmpty:
+                  summary: Пустой email
+                  value: "email is empty\n"
+                passwordEmpty:
+                  summary: Пустой пароль
+                  value: "password is empty\n"
+                passwordTooLong:
+                  summary: Пароль длиннее 72 байт
+                  value: "password too long\n"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "409":
+          description: Пользователь с таким email уже существует.
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/ErrorText"
+              example: "email already in use\n"
+        "500":
+          description: Внутренняя ошибка. Подробности только в логах сервера.
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/ErrorText"
+              example: "unable to save\n"
+
+  /login:
+    post:
+      tags: [auth]
+      operationId: login
+      security: []
+      summary: Вход по email и паролю
+      description: |
+        Проверяет email и пароль. Пока не выдаёт токен: успешный ответ — это
+        только код `200`.
+
+        Неизвестные поля в теле игнорируются. Для несуществующего email и
+        неверного пароля ответ одинаковый.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: user@example.com
+              password: secret123
+      responses:
+        "200":
+          description: Email и пароль верные. Тело пустое.
+        "400":
+          description: Тело не JSON, email или пароль пустые.
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/ErrorText"
+              examples:
+                parse:
+                  summary: Тело не разобрано
+                  value: "unable to parse\n"
+                emailEmpty:
+                  summary: Пустой email
+                  value: "Provided email is empty\n"
+                passwordEmpty:
+                  summary: Пустой пароль
+                  value: "Provided password is empty\n"
+        "401":
+          description: Неверный email или пароль.
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/ErrorText"
+              example: "Invalid credentials\n"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "500":
+          description: Внутренняя ошибка. Подробности только в логах сервера.
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/ErrorText"
+              example: "unable to login\n"
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          description: Не пустой. Формат email сервер пока не проверяет.
+          examples: [user@example.com]
+        password:
+          type: string
+          description: Не пустой, не длиннее 72 байт (ограничение bcrypt).
+          examples: [secret123]
+
+    RegisterResponse:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          description: Идентификатор созданного пользователя.
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          examples: [user@example.com]
+        password:
+          type: string
+          examples: [secret123]
+
+    ErrorText:
+      type: string
+      description: Текст ошибки с переводом строки в конце.
+
+  responses:
+    MethodNotAllowed:
+      description: Метод отличается от POST.
+      content:
+        text/plain:
+          schema:
+            $ref: "#/components/schemas/ErrorText"
+          example: "Method not allowed\n"

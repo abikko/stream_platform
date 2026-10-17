@@ -73,12 +73,20 @@ curl -i -X POST localhost:8080/login -d '{"email":"user@example.com","password":
 
 Ответы: `200` при верном пароле, `400` на некорректный запрос, `401` если email или пароль неверны.
 
+## Документация API
+
+```sh
+make docs
+```
+
+Swagger UI для `auth/api/openapi.yaml` откроется на http://localhost:8081.
+
 ## Проверка
 
 ```sh
 make check
 ```
 
-Форматирует код, запускает линтеры (`.golangci.yml`) и тесты. Остальные команды: `make help`.
+Форматирует код, запускает линтеры (`.golangci.yml`), тесты и проверку `openapi.yaml`. Остальные команды: `make help`.
 
 Правила для AI-агента находятся в `AGENTS.md`.
