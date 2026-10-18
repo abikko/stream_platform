@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	SetupLogger()
 	pool, bootstrapErr := bootstrapDatabase()
 	if bootstrapErr != nil {
 		log.Fatalf("bootstrap: %v", bootstrapErr)

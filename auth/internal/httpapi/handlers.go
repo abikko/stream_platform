@@ -14,5 +14,5 @@ func NewRouter(registerService identity.RegisterService, loginService identity.L
 	mux.HandleFunc("POST /register", NewRegisterHandler(registerService).ServeHTTP)
 	mux.HandleFunc("POST /login", NewLoginHandler(loginService).ServeHTTP)
 
-	return mux
+	return LogMiddleware(mux)
 }
