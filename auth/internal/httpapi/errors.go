@@ -6,8 +6,17 @@ import (
 	"net/http"
 )
 
+type ErrorCode string
+
+const (
+	ErrorCodeEmailAlreadyInUse ErrorCode = "email_already_in_use"
+	ErrorCodeValidation        ErrorCode = "validation_failed"
+	ErrorInternalError         ErrorCode = "internal_error"
+	ErrorPasswordTooLong       ErrorCode = "password_too_long"
+)
+
 type ErrorResponse struct {
-	Code    string               `json:"code"`
+	Code    ErrorCode            `json:"code"`
 	Message string               `json:"message"`
 	Fields  []ErrorFieldResponse `json:"fields,omitempty"`
 }
@@ -19,7 +28,7 @@ type ErrorFieldResponse struct {
 }
 
 func WriteInternalServerError(w http.ResponseWriter, logErr error) {
-	ErrorResponse{Code: "internal_error", Message: "Internal Server Error"}.WriteError(w, http.StatusInternalServerError)
+	ErrorResponse{Code: ErrorInternalError, Message: "Internal Server Error"}.WriteError(w, http.StatusInternalServerError)
 
 	log.Print(logErr)
 }

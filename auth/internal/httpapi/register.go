@@ -3,6 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -41,31 +42,46 @@ func (h *RegisterHandler) ServeHTTP(
 
 	id, err := h.service.InsertUser(r.Context(), req.Email, req.Password)
 	if err != nil {
+		if validationError, found := errors.AsType[identity.ValidationError](err); found {
+			var fieldErrorResponse []ErrorFieldResponse
+			for _, fieldError := range validationError.Fields {
+				fieldErrorResponse = append(fieldErrorResponse, ErrorFieldResponse{
+					Field:   fieldError.Field,
+					Code:    string(fieldError.Code),
+					Message: "error validate",
+				})
+			}
+			ErrorResponse{
+				Code:    ErrorCodeValidation,
+				Message: "Validation error",
+				Fields:  fieldErrorResponse,
+			}.WriteError(w, http.StatusBadRequest)
+			return
+		}
 		switch {
 		case errors.Is(err, identity.ErrEmailAlreadyInUse):
 			{
-				http.Error(w, "email already in use", http.StatusConflict)
+				ErrorResponse{Code: ErrorCodeEmailAlreadyInUse, Message: "email already in use"}.WriteError(w, http.StatusConflict)
 				return
 			}
 		case errors.Is(err, identity.ErrPasswordTooLong):
 			{
-				http.Error(w, "password too long", http.StatusBadRequest)
+				ErrorResponse{Code: ErrorPasswordTooLong, Message: "password too long"}.WriteError(w, http.StatusBadRequest)
 				return
 			}
 		case errors.Is(err, identity.ErrEmailIsEmpty):
 			{
-				http.Error(w, "email is empty", http.StatusBadRequest)
+				ErrorResponse{Code: "invalid_data", Message: "invalid credentials"}.WriteError(w, http.StatusBadRequest)
 				return
 			}
 		case errors.Is(err, identity.ErrPasswordIsEmpty):
 			{
-				http.Error(w, "password is empty", http.StatusBadRequest)
+				ErrorResponse{Code: "invalid_data", Message: "invalid credentials"}.WriteError(w, http.StatusBadRequest)
 				return
 			}
 		default:
 			{
-				http.Error(w, "unable to save", http.StatusInternalServerError)
-				log.Print(err)
+				WriteInternalServerError(w, fmt.Errorf("create user: %w", err))
 				return
 			}
 		}

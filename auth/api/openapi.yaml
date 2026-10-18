@@ -6,9 +6,13 @@ info:
   description: |
     Регистрация и вход пользователей stream_platform.
 
-    Тела ошибок — обычный текст (`text/plain`), который пишет `http.Error`:
-    в конце сообщения всегда стоит перевод строки. Клиенту стоит опираться
-    на код ответа, а не на текст.
+    Ошибки переводятся на JSON-формат `{"code": "...", "message": "..."}`
+    (схема `Error`). Клиенту стоит опираться на `code`, а не на `message`:
+    `code` — стабильный машинный код, `message` — текст для человека.
+
+    Переход ещё не завершён: в `/register` на JSON отвечают все ошибки,
+    кроме неразобранного тела; `/login` пока целиком отвечает обычным
+    текстом (`text/plain`) от `http.Error`, с переводом строки в конце.
 
     `404` (неизвестный путь) и `405` (неподдерживаемый метод) отдаёт сам
     роутер, тоже обычным текстом.
@@ -67,41 +71,59 @@ paths:
                 id: 3f2b8c1e-6a4d-4e9b-9c1a-2d7e5f0a8b44
         "400":
           description: |
-            Некорректный запрос: тело не JSON или содержит неизвестные поля,
-            email или пароль пустые, пароль длиннее 72 байт.
+            Некорректный запрос.
+
+            - Поля не прошли проверку (email или пароль пустые, пароль
+              длиннее 72 байт) — `application/json`, `code: validation_failed`
+              и список `fields` сразу со всеми ошибками.
+            - Тело не JSON или содержит неизвестные поля — пока обычный
+              текст (`text/plain`).
+
+            Сейчас `message` у элементов `fields` — временная заглушка
+            `error validate`: тексты появятся вместе с локализацией.
           content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+              examples:
+                emailEmpty:
+                  summary: Пустой email
+                  value:
+                    code: validation_failed
+                    message: Validation error
+                    fields:
+                      - field: email
+                        code: required
+                        message: error validate
+                emailEmptyPasswordTooLong:
+                  summary: Пустой email и пароль длиннее 72 байт
+                  value:
+                    code: validation_failed
+                    message: Validation error
+                    fields:
+                      - field: email
+                        code: required
+                        message: error validate
+                      - field: password
+                        code: too_long
+                        message: error validate
             text/plain:
               schema:
                 $ref: "#/components/schemas/ErrorText"
-              examples:
-                parse:
-                  summary: Тело не разобрано
-                  value: "Unable to parse\n"
-                emailEmpty:
-                  summary: Пустой email
-                  value: "email is empty\n"
-                passwordEmpty:
-                  summary: Пустой пароль
-                  value: "password is empty\n"
-                passwordTooLong:
-                  summary: Пароль длиннее 72 байт
-                  value: "password too long\n"
+              example: "Unable to parse\n"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
         "409":
           description: Пользователь с таким email уже существует.
           content:
-            text/plain:
+            application/json:
               schema:
-                $ref: "#/components/schemas/ErrorText"
-              example: "email already in use\n"
+                $ref: "#/components/schemas/Error"
+              example:
+                code: email_already_in_use
+                message: email already in use
         "500":
-          description: Внутренняя ошибка. Подробности только в логах сервера.
-          content:
-            text/plain:
-              schema:
-                $ref: "#/components/schemas/ErrorText"
-              example: "unable to save\n"
+          $ref: "#/components/responses/InternalError"
 
   /login:
     post:
@@ -194,11 +216,64 @@ components:
           type: string
           examples: [secret123]
 
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: |
+            Стабильный машинный код в snake_case. На него опирается клиент.
+          examples: [email_already_in_use]
+        message:
+          type: string
+          description: Текст для человека. Может меняться.
+
+    ValidationError:
+      description: Ошибка проверки полей запроса — сразу все ошибки, а не первая.
+      allOf:
+        - $ref: "#/components/schemas/Error"
+        - type: object
+          required: [fields]
+          properties:
+            code:
+              const: validation_failed
+            fields:
+              type: array
+              items:
+                $ref: "#/components/schemas/FieldError"
+
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties:
+        field:
+          type: string
+          description: Имя поля из тела запроса.
+          examples: [email]
+        code:
+          type: string
+          description: Код ошибки поля, общий для всех полей.
+          enum: [required, too_long]
+        message:
+          type: string
+          description: Текст для человека. Сейчас всегда заглушка `error validate`.
+
     ErrorText:
       type: string
       description: Текст ошибки с переводом строки в конце.
 
   responses:
+    InternalError:
+      description: Внутренняя ошибка. Подробности только в логах сервера.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: internal_error
+            message: Internal Server Error
+
     MethodNotAllowed:
       description: |
         Метод не поддерживается этим путём. Ответ формирует сам `ServeMux`,
