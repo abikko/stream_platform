@@ -8,11 +8,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserDoesNotExist   = errors.New("user does not exist")
-)
-
 type LoginService struct {
 	Store BaseStore
 }

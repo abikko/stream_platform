@@ -8,14 +8,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	ErrEmailAlreadyInUse = errors.New("email already in use")
-	ErrPasswordTooLong   = errors.New("password too long")
-	ErrPasswordIsEmpty   = errors.New("password is empty")
-	ErrEmailIsEmpty      = errors.New("email is empty")
-	ErrUnableToHash      = errors.New("unable to hash password")
-)
-
 type RegisterService struct {
 	Store BaseStore
 }

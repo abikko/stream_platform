@@ -17,10 +17,10 @@ func main() {
 	}
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/health", httpapi.NewHealthHandler().ServeHTTP)
+	mux.HandleFunc("GET /health", httpapi.NewHealthHandler().ServeHTTP)
 
-	mux.HandleFunc("/register", httpapi.NewRegisterHandler(identity.RegisterService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
-	mux.HandleFunc("/login", httpapi.NewLoginHandler(identity.LoginService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
+	mux.HandleFunc("POST /register", httpapi.NewRegisterHandler(identity.RegisterService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
+	mux.HandleFunc("POST /login", httpapi.NewLoginHandler(identity.LoginService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
 
 	timeoutDuration := 15 * time.Second
 

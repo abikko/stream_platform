@@ -10,6 +10,9 @@ info:
     в конце сообщения всегда стоит перевод строки. Клиенту стоит опираться
     на код ответа, а не на текст.
 
+    `404` (неизвестный путь) и `405` (неподдерживаемый метод) отдаёт сам
+    роутер, тоже обычным текстом.
+
 servers:
   - url: http://localhost:8080
     description: Локальный запуск (`make run`)
@@ -31,7 +34,7 @@ paths:
         "200":
           description: Сервис работает. Тело пустое.
         "405":
-          description: Метод отличается от GET. Тело пустое.
+          $ref: "#/components/responses/MethodNotAllowed"
 
   /register:
     post:
@@ -197,9 +200,17 @@ components:
 
   responses:
     MethodNotAllowed:
-      description: Метод отличается от POST.
+      description: |
+        Метод не поддерживается этим путём. Ответ формирует сам `ServeMux`,
+        поэтому он всегда `text/plain`.
+      headers:
+        Allow:
+          description: Методы, которые поддерживает путь.
+          schema:
+            type: string
+          example: POST
       content:
         text/plain:
           schema:
             $ref: "#/components/schemas/ErrorText"
-          example: "Method not allowed\n"
+          example: "Method Not Allowed\n"
