@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/abikko/stream_platform/auth/internal/identity"
 )
 
 func TestHealthHandler_MethodNotAllowed(t *testing.T) {
@@ -23,7 +25,9 @@ func TestHealthHandler_MethodNotAllowed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 
-			NewHealthHandler().ServeHTTP(
+			router := NewRouter(identity.RegisterService{}, identity.LoginService{})
+
+			router.ServeHTTP(
 				recorder, httptest.NewRequestWithContext(t.Context(), test.method, "/health", nil),
 			)
 

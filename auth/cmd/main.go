@@ -11,22 +11,23 @@ import (
 )
 
 func main() {
-	pool, bootstrapErr := bootstrap()
+	pool, bootstrapErr := bootstrapDatabase()
 	if bootstrapErr != nil {
 		log.Fatalf("bootstrap: %v", bootstrapErr)
 	}
-	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /health", httpapi.NewHealthHandler().ServeHTTP)
+	store := postgres.UserStore{Pool: pool}
 
-	mux.HandleFunc("POST /register", httpapi.NewRegisterHandler(identity.RegisterService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
-	mux.HandleFunc("POST /login", httpapi.NewLoginHandler(identity.LoginService{Store: &postgres.UserStore{Pool: pool}}).ServeHTTP)
+	router := httpapi.NewRouter(
+		identity.RegisterService{Store: store},
+		identity.LoginService{Store: store},
+	)
 
 	timeoutDuration := 15 * time.Second
 
 	server := http.Server{
 		Addr:              ":8080",
-		Handler:           mux,
+		Handler:           router,
 		ReadHeaderTimeout: 8 * time.Second,
 		ReadTimeout:       timeoutDuration,
 		WriteTimeout:      timeoutDuration,

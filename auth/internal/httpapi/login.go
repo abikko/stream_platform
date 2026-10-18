@@ -25,11 +25,6 @@ func NewLoginHandler(service identity.LoginService) *LoginHandler {
 func (h *LoginHandler) ServeHTTP(w http.ResponseWriter,
 	r *http.Request,
 ) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req LoginRequest
 	decoder := json.NewDecoder(r.Body)
 	decodeError := decoder.Decode(&req)

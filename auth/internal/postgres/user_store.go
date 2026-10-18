@@ -21,7 +21,7 @@ const (
 	emailNotFound    = "20000"
 )
 
-func (userStore *UserStore) CreateUser(ctx context.Context, passwordHash []byte, email string) (id string, err error) {
+func (userStore UserStore) CreateUser(ctx context.Context, passwordHash []byte, email string) (id string, err error) {
 	query := "INSERT INTO users(email, password_hash) VALUES($1,$2) RETURNING id"
 	if err := userStore.Pool.QueryRow(ctx, query, email, passwordHash).Scan(&id); err != nil {
 		if dbError, found := errors.AsType[*pgconn.PgError](err); found && dbError.Code == emailAlreadyInDB {
@@ -34,7 +34,7 @@ func (userStore *UserStore) CreateUser(ctx context.Context, passwordHash []byte,
 	return id, nil
 }
 
-func (userStore *UserStore) FindUser(ctx context.Context, email string) (identity.User, error) {
+func (userStore UserStore) FindUser(ctx context.Context, email string) (identity.User, error) {
 	query := "SELECT id,email,password_hash,created_at FROM users WHERE email=$1"
 
 	queryRow, err := userStore.Pool.Query(ctx, query, email)

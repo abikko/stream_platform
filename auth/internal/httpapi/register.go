@@ -30,11 +30,6 @@ func (h *RegisterHandler) ServeHTTP(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req RegisterRequest
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
