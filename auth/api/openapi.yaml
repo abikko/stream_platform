@@ -22,6 +22,17 @@ info:
     в лог сервера, поэтому по нему можно найти строку лога для конкретного
     ответа.
 
+    CORS открыт для любого origin: каждый ответ содержит
+    `Access-Control-Allow-Origin: *` и
+    `Access-Control-Expose-Headers: X-Request-Id` (чтобы JS в браузере мог
+    прочитать идентификатор запроса). Preflight-запрос (`OPTIONS` с
+    заголовком `Access-Control-Request-Method`) на любой путь получает
+    `204` без тела с `Access-Control-Allow-Methods: *`,
+    `Access-Control-Allow-Headers: Content-Type, Authorization` и
+    `Access-Control-Max-Age: 240`; `X-Request-Id` у такого ответа нет.
+    `OPTIONS` без этого заголовка обрабатывается как обычный запрос и
+    получает `405`.
+
 servers:
   - url: http://localhost:8080
     description: Локальный запуск (`make run`)
